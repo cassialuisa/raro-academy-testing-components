@@ -25,7 +25,30 @@ describe('Cadastro Page', () => {
   });
 
   it('deve validar o formato de e-mail no cadastro', () => {
+    // setup
+    const email = "teste@raro.com"
+    const regexEmail = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    // construcao do cenário e expects
+    expect(email).toMatch(regexEmail);
 
+  });
+
+  describe("deve validar o padrão de e-mail", () => {
+    let input: HTMLElement;
+    beforeEach(() => {
+      input = screen.getByPlaceholderText('e-mail');
+    });
+
+    it('deve validar o formato de e-mail no cadastro no input', () => {
+      // setup
+      const email = "teste@raro.com"
+      const mensagemDeValidacao = 'Formato de e-mail inválido';
+
+      // construcao do cenário e expects
+      validaErroApresentadoEmTela(input, mensagemDeValidacao);
+      validaErroNaoApresentadoEmTela(input, email, mensagemDeValidacao);
+
+    });
   });
 
   describe('deve validar os critérios de aceitação da senha', () => {
@@ -70,9 +93,51 @@ describe('Cadastro Page', () => {
     });
   });
 
-  it('deve garantir que senha e confirmação sejam iguais', () => {});
+  describe('deve validar a confirmação de senha', () => {
+    let input: HTMLElement;
+    let inputSecundario: HTMLElement;
+    beforeEach(() => {
+      input = screen.getByPlaceholderText('Senha');
+      inputSecundario = screen.getByPlaceholderText('Confirmação de Senha');
+    });
+
+    it('deve garantir que senha e confirmação sejam iguais', () => {
+      // setup
+      const senha = "Teste01@";
+      const senhaConfirmacao = "Teste01@";
+      const mensagemDeValidacao = 'Senhas não conferem';
+      // construcao do cenário e expects
+      setValorInput(input, senha);
+      validaErroNaoApresentadoEmTela(inputSecundario, senhaConfirmacao, mensagemDeValidacao);
+    });
+
+  });
 
   it('deve enviar o formulário se todos os dados estiverem preenchidos corretamente', () => {
+    // setup
+    const nome = screen.getByPlaceholderText('Nome');
+    const email = screen.getByPlaceholderText('e-mail');
+    const senha = screen.getByPlaceholderText('Senha');
+    const confirmacaoSenha = screen.getByPlaceholderText('Confirmação de Senha');
+    const codigoAcesso = screen.getByPlaceholderText('Código de Acesso');
+    const botao = screen.getByText('Cadastrar');
+    const dados = {
+      nome: faker.name.firstName(),
+      email: faker.internet.email(),
+      senha: 'S3nh@!123',
+      codigoAcesso: faker.lorem.paragraph(),
+    };
+
+    // construcao
+    setValorInput(nome, dados.nome);
+    setValorInput(email, dados.email);
+    setValorInput(senha, dados.senha);
+    setValorInput(confirmacaoSenha, dados.senha);
+    setValorInput(codigoAcesso, dados.codigoAcesso);
+
+    // asserts
+    expect(botao).not.toBeDisabled();
+
 
   });
 
@@ -107,5 +172,42 @@ describe('Cadastro Page', () => {
     );
   });
 
-  it('deve apresentar os erros de validação para o usuário, caso a API retorne erro', () => {});
+  it('deve apresentar os erros de validação para o usuário, caso a API retorne erro', () => {
+    // setup
+    jest.spyOn(axios, 'post').mockResolvedValue(
+      {
+        error: "Bad Request",
+        message: "usuario_ja_existe",
+        statusCode: 400
+      },
+    );
+    const nome = screen.getByPlaceholderText('Nome');
+    const email = screen.getByPlaceholderText('e-mail');
+    const senha = screen.getByPlaceholderText('Senha');
+    const confirmacaoSenha = screen.getByPlaceholderText('Confirmação de Senha');
+    const codigoAcesso = screen.getByPlaceholderText('Código de Acesso');
+    const botao = screen.getByText('Cadastrar');
+    const dados = {
+      nome: faker.name.firstName(),
+      email: faker.internet.email(),
+      senha: 'S3nh@!123',
+      codigoAcesso: faker.lorem.paragraph(),
+    };
+
+    // construcao
+    setValorInput(nome, dados.nome);
+    setValorInput(email, dados.email);
+    setValorInput(senha, dados.senha);
+    setValorInput(confirmacaoSenha, dados.senha);
+    setValorInput(codigoAcesso, dados.codigoAcesso);
+    botao.click();
+
+    // asserts
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining('/auth/cadastrar'),
+      dados
+    );
+
+    expect(axios.post).toHaveBeenCalled();
+  });
 });
