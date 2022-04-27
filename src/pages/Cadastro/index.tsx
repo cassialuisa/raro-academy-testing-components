@@ -1,5 +1,5 @@
 import axios from "axios";
-import { FormEvent, useCallback, useMemo } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { campoObrigatorio } from "../../helpers/validators/campoObrigatorio";
@@ -8,6 +8,7 @@ import { senhaValida } from "../../helpers/validators/senhaValida";
 import { useValidatedField } from "../../hooks/useValidatedField";
 
 export const Cadastro = () => {
+  const [erro, setErro] = useState('')
   const nome = useValidatedField(campoObrigatorio('Nome'));
   const email = useValidatedField(emailValido('E-mail'));
   const codigoAcesso = useValidatedField(campoObrigatorio('Codigo Acesso'));
@@ -28,7 +29,7 @@ export const Cadastro = () => {
     codigoAcesso.isValid &&
     senha.isValid &&
     confirmacaoSenha.isValid
-  , [codigoAcesso.isValid, confirmacaoSenha.isValid, email.isValid, nome.isValid, senha.isValid]);
+    , [codigoAcesso.isValid, confirmacaoSenha.isValid, email.isValid, nome.isValid, senha.isValid]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -40,12 +41,18 @@ export const Cadastro = () => {
       codigoAcesso: codigoAcesso.value
     };
 
-    await axios.post(
-      'https://3.221.159.196:3320/auth/cadastrar',
-      usuario
-    );
-  }
+    try {
+      const response = await axios.post(
+        'http://3.221.159.196:3322/auth/cadastrar',
+        usuario
+      );
+      setErro('Ok')
+    } catch (error: any) {
+      setErro(error.message)
+    }
 
+
+  }
   return (
     <div className="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -105,9 +112,14 @@ export const Cadastro = () => {
             <Button type="submit" disabled={!formValido}>
               Cadastrar
             </Button>
+
+            <>
+              {erro ? (<span className="font-small text-[#FF0000]">{erro} </span>) : <></>}
+            </>
           </form>
         </div>
       </div>
     </div>
   );
 };
+

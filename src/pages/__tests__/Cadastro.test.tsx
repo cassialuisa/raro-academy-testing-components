@@ -1,11 +1,12 @@
 import { Cadastro } from '../Cadastro';
 
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import faker from '@faker-js/faker';
 import { validaErroApresentadoEmTela } from '../../helpers/teste/validaErroApresentadoEmTela';
 import { validaErroNaoApresentadoEmTela } from '../../helpers/teste/validaErroNaoApresentadoEmTela';
 import { setValorInput } from '../../helpers/teste/setValorInput';
 import axios from 'axios';
+import { isExportDeclaration } from 'typescript';
 
 const makeSut = () => {
   return render(
@@ -25,7 +26,7 @@ describe('Cadastro Page', () => {
   });
 
   it('deve validar o formato de e-mail no cadastro', () => {
-    // setup
+    // setup de validação via regex
     const email = "teste@raro.com"
     const regexEmail = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
     // construcao do cenário e expects
@@ -40,7 +41,7 @@ describe('Cadastro Page', () => {
     });
 
     it('deve validar o formato de e-mail no cadastro no input', () => {
-      // setup
+      // setup validação pelo input de email
       const email = "teste@raro.com"
       const mensagemDeValidacao = 'Formato de e-mail inválido';
 
@@ -141,7 +142,7 @@ describe('Cadastro Page', () => {
 
   });
 
-  it('deve notificar o usuário que o cadastro foi efetuado com sucesso', () => {
+  it('deve notificar o usuário que o cadastro foi efetuado com sucesso', async () => {
     // setup
     jest.spyOn(axios, 'post').mockResolvedValue('ok');
     const nome = screen.getByPlaceholderText('Nome');
@@ -165,22 +166,20 @@ describe('Cadastro Page', () => {
     setValorInput(codigoAcesso, dados.codigoAcesso);
     botao.click();
 
+
+
     // asserts
     expect(axios.post).toHaveBeenCalledWith(
       expect.stringContaining('/auth/cadastrar'),
       dados
     );
+    expect(await screen.findByText('Ok')).toBeInTheDocument()
   });
 
-  it('deve apresentar os erros de validação para o usuário, caso a API retorne erro', () => {
+  it('deve apresentar os erros de validação para o usuário, caso a API retorne erro', async () => {
     // setup
-    jest.spyOn(axios, 'post').mockResolvedValue(
-      {
-        error: "Bad Request",
-        message: "usuario_ja_existe",
-        statusCode: 400
-      },
-    );
+    // const response = {};
+    jest.spyOn(axios, 'post').mockRejectedValue(new Error("Erro na requisição"));
     const nome = screen.getByPlaceholderText('Nome');
     const email = screen.getByPlaceholderText('e-mail');
     const senha = screen.getByPlaceholderText('Senha');
@@ -191,7 +190,7 @@ describe('Cadastro Page', () => {
       nome: faker.name.firstName(),
       email: faker.internet.email(),
       senha: 'S3nh@!123',
-      codigoAcesso: faker.lorem.paragraph(),
+      codigoAcesso: faker.lorem.paragraph(),  
     };
 
     // construcao
@@ -208,6 +207,10 @@ describe('Cadastro Page', () => {
       dados
     );
 
-    expect(axios.post).toHaveBeenCalled();
+    expect(await screen.findByText("Erro na requisição")).toBeInTheDocument();
+
+    // await expect(axios.post)
+    //   .rejects
+    //   .toThrow('Erro na requisição');
   });
 });
