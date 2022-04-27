@@ -209,8 +209,5 @@ describe('Cadastro Page', () => {
 
     expect(await screen.findByText("Erro na requisição")).toBeInTheDocument();
 
-    // await expect(axios.post)
-    //   .rejects
-    //   .toThrow('Erro na requisição');
   });
 });
